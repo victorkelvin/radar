@@ -1,0 +1,42 @@
+/* Custom Properties */
+
+:root {
+    /* --color: hsl(0, 0%, 22%); */
+    /* --color-subtle: ; */
+    --color-strong: hsl(0, 0%, 11%);
+    --color-link: hsl(0, 0%, 22%);
+    --color-border: hsl(0, 0%, 88%);
+    /* --color-bg: hsl(0, 0%, 96%); */
+    --color-accent: black;
+    --color: hsl(0, 0%, 44%);
+    --color-subtle: hsl(0, 0%, 96%);
+    --color-bg: rgb(1, 187, 173);
+    
+}
+
+
+/* Category Colors */
+
+.u-category-utils {
+    --color-tools: hsl(22, 100%, 50%);
+}
+
+.u-category-menu {
+    --color-accent: hsl(194, 60%, 36%);
+}
+
+.u-category-messages {
+    --color-accent: hsl(222, 53%, 50%);
+}
+
+.u-category-groups {
+    --color-accent: hsl(285, 47%, 46%);
+}
+
+.u-category-system {
+    --color-accent: hsl(330, 65%, 48%);
+}
+
+.u-category-media {
+    --color-accent: hsl( 36, 77%, 34%);
+}

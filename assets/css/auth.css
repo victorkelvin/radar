@@ -1,0 +1,96 @@
+/* Fonts ---------------------------- */
+
+@font-face {
+    font-family: 'Source Code Pro';
+    font-style: normal;
+    font-weight: 400;
+    src: local('Source Code Pro'), local('SourceCodePro'), url(fonts/SourceCodePro-Regular.ttf) format('truetype');
+}
+
+/* Global ---------------------------- */
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    height: 100%;
+    font-family: 'BlinkMacSystemFont', 'Lucida Grande', 'Segoe UI', Ubuntu, Cantarell, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    overflow: auto;
+    /* Prevents rubber-band scrolling of the whole "page" */
+    color: var(--color-subtle);
+    background-color: var(--color-bg);
+    /* To cover OSes with no default background color */
+}
+
+body {
+    height: 100%;
+}
+
+svg {
+    fill: currentColor;
+}
+
+li{
+    margin-bottom: 1em;
+}
+
+.header-content{
+        position: relative;
+        padding: 2rem;
+        margin-bottom: 1rem;
+        border-bottom: 1px solid var(--color-border);
+}
+
+.header-icon{
+    position: absolute;
+    width: 36px;
+    height: 36px;
+    top: 3.5em;
+    left: 1em;
+}
+
+.header-title{
+    font-weight: 300;
+    font-size: 2.5em;
+    line-height: 1;
+    color: var(--color-subtle);
+    margin-left: 1em;
+}
+
+.header-title strong{
+        font-weight: 600;
+        color: var(--color-strong);
+}
+
+.auth-landing{
+    font-size: 18px;
+}
+
+.auth-div{
+    text-align: center;
+    text-align: -webkit-center;
+    padding: 1em;
+    overflow: auto;
+}
+
+
+
+.auth-loader {
+    border: 12px solid var(--color-subtle);
+    border-top-color: var(--color-bg);
+    height: 100px;
+    width: 100px;
+    border-radius: 50%;
+    animation: is-rotating 3s infinite;
+    margin-top: 5em;
+}
+
+@keyframes is-rotating {
+    to {
+      transform: rotate(1turn);
+    }
+  }
+
