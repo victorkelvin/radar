@@ -165,23 +165,24 @@ async function getGroupCode(args) {
       console.log(error);
     }
   }
-  args[1].groupCode = "Iuy7sI3XNXwBuJ9xAb7weA";
-  console.log(args);
+  // args[1].groupCode = "Iuy7sI3XNXwBuJ9xAb7weA";
   return args;
 };
 
 async function startMonitor(campaignForm) {
   console.log('starting Monitor!');
+  console.log(campaignForm); 
+  mainWindow.webContents.send('clearDashboard');
+  mainWindow.loadFile('./dashboard.html');
   for (i = 0; i < campaignForm.length; i++) {
+    let status;
     try {
-    let groupInfo = await sock.groupGetInviteInfo(campaignForm[i].groupCode);
-    console.log(groupInfo.id);
-      
+      await sock.groupGetInviteInfo(campaignForm[i].groupCode);
+      status = 1;
     } catch (error) {
-      console.log(error.data);
+      status = 0;
     }
-
-
+    mainWindow.webContents.send('createDashboard', {...campaignForm[i], status} );
   }
 };
 

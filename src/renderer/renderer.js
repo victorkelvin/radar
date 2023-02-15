@@ -13,7 +13,9 @@ document.getElementById('confirm-button').addEventListener('click', () => {
     let campaignUrl = document.getElementsByName('url-input');
 
     for (i = 0; i < campaignUrl.length; i++) {
-        campaigns.push({ name: campaignName[i].value, url: campaignUrl[i].value })
+        if (campaignUrl[i].value) {
+            campaigns.push({ name: campaignName[i].value, url: campaignUrl[i].value })
+        }
     }
     ipcRenderer.send('startMonitor', campaigns);
     saveLocalInfo(campaigns);
@@ -40,4 +42,3 @@ function loadLocalInfo() {
 
 
 
-// https://joinzap.app/coc07
