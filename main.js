@@ -15,6 +15,7 @@ let indexPage = "./index.html";
 let browserIndex = authPage;
 let dataPath = `${app.getPath('userData')}\\storage`;
 let campaignForm;
+let interval;
 
 const nativeMenus = [{
   label: 'Ferramentas',
@@ -49,9 +50,18 @@ app.whenReady().then(async () => {
   main();
 
   ipcMain.on('startMonitor', async (ev, response) => {
-    // console.log(response);
+
+    if(interval)clearInterval(interval);
+
+    console.log("startmonitor IPC:", response);
     campaignForm = await getGroupCode(response);
     await startMonitor(campaignForm);
+    interval = setInterval(async () => await startMonitor(campaignForm),300000 )
+    
+  })
+  
+  ipcMain.on('returnPage', () =>{
+    mainWindow.loadFile('./index.html')
   })
 
 });
@@ -130,6 +140,7 @@ const createBrowserWindow = (browserIndex) => {
   const browserOptions = {
     minWidth: 500,
     minHeight: 500,
+    // maxWidth: 800,
     useContentSize: true,
     height: 700,
     width: 500,
@@ -153,8 +164,6 @@ process.on('uncaughtException', (e, origin) => {
 
 async function getGroupCode(args) {
   const remove = 'https://chat.whatsapp.com/';
-
-  console.log("getGroupCode");
   for (i = 0; i < args.length; i++) {
     try {
       const resp = await axios.get(args[i].url);
@@ -165,7 +174,7 @@ async function getGroupCode(args) {
       console.log(error);
     }
   }
-  // args[1].groupCode = "Iuy7sI3XNXwBuJ9xAb7weA";
+  args[1].groupCode = "Iuy7sI3XNXwBuJ9xAb7weA";
   return args;
 };
 

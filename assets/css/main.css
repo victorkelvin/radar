@@ -10,14 +10,14 @@ html {
     /* To cover OSes with no default background color */
 }
 
-footer{
+footer {
     display: flex;
-   justify-content: center; 
-   margin: 10px;
+    justify-content: center;
+    margin: 10px;
     padding: 10px;
 }
 
-h3{
+h3 {
     text-align: center;
     padding: 8px 12px;
     gap: 10px;
@@ -64,11 +64,7 @@ h3{
     text-align: center;
 }
 
-.dashboard-form {
-    display: flex;
-    flex-direction: column;
-    text-align: center;
-}
+
 
 input {
     display: flex;
@@ -86,17 +82,12 @@ input {
 }
 
 
-.campaign-div{
+.campaign-div {
     display: flex;
     flex-direction: row;
     justify-content: center;
 }
 
-.dashboard-div {
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-}
 
 .campaign-input {
     width: 240px;
@@ -111,7 +102,7 @@ input {
     padding: 12px 24px;
     gap: 10px;
     color: white;
-    width: 562px;
+    width: 500px;
     height: 40px;
     font-size: 20px;
     /* Blue */
@@ -120,7 +111,77 @@ input {
     border-radius: 10px;
 }
 
-.dashboard-info{
-    width: 240px;
-    height: 20px;
+.dashboard-info {
+    width: auto;
+    height: auto;
+    margin: 10px;
+    padding: 5px;
+    font-weight: 900;
+    letter-spacing: 3px;
+    font-family: sans-serif;
+
+}
+
+.dashboard-div {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+}
+
+.dashboard-form {
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+}
+
+
+
+.status1 {
+    border: solid 3px green;
+    border-radius: 8px;
+    background-color: green;
+}
+
+/* .status0{
+    border: solid 3px red;
+    border-radius: 8px;
+    background-color: red;
+} */
+
+
+.status0 {
+    border-radius: 8px;
+    -webkit-animation: alert-blink 1s infinite;
+    /* Safari 4+ */
+    -moz-animation: alert-blink 1s infinite;
+    /* Fx 5+ */
+    -o-animation: alert-blink 1s infinite;
+    /* Opera 12+ */
+    animation: alert-blink 1s infinite;
+    /* IE 10+, Fx 29+ */
+}
+
+@-webkit-keyframes alert-blink {
+
+    0%,
+    49% {
+        background-color: rgb(253, 253, 253);
+        border: 3px solid #e50000;
+        color: red;
+    }
+
+    50%,
+    100% {
+        background-color: #e50000;
+        border: 3px solid red;
+    }
+}
+
+.dashboard-buttons{
+    display: flex;
+    flex-direction: row;
+}
+
+#last-verification{
+    color: black;
 }
