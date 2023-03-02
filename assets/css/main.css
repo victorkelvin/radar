@@ -27,6 +27,18 @@ h3 {
 
 }
 
+h2{
+    margin: 0;
+}
+span{
+    font-size: large;
+}
+
+p{
+    align-self: center;
+    width: -webkit-fill-available
+}
+
 .header {
     display: flex;
     flex-direction: column;
@@ -79,6 +91,7 @@ input {
     background: #E2E6EE;
     border-radius: 10px;
     resize: none;
+    max-height: 30px;
 }
 
 
@@ -92,6 +105,18 @@ input {
 .campaign-input {
     width: 240px;
     height: 20px;
+}
+
+.contacts-input{
+    width: -webkit-fill-available;
+    max-width: 550px;
+}
+
+.contacts-div{
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .radar-button {
@@ -111,14 +136,20 @@ input {
     border-radius: 10px;
 }
 
+.radar-button:hover {
+    border-color: var(--color-border);
+    /* background-color: #2898b4; */
+    color: var(--color-strong);
+}
+
 .dashboard-info {
     width: auto;
     height: auto;
     margin: 10px;
     padding: 5px;
     font-weight: 900;
-    letter-spacing: 3px;
     font-family: sans-serif;
+    align-self: center;
 
 }
 
@@ -140,6 +171,13 @@ input {
     border: solid 3px green;
     border-radius: 8px;
     background-color: green;
+}
+
+.status2 {
+    border: solid 3px green;
+    border-radius: 8px;
+    background-color: yellow;
+    color: #030102;
 }
 
 /* .status0{
@@ -180,8 +218,20 @@ input {
 .dashboard-buttons{
     display: flex;
     flex-direction: row;
+    justify-content: center ;
 }
 
 #last-verification{
     color: black;
+}
+
+.js-content-validation{
+    display: flex;
+    text-align: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+.validation-input{
+    width: 400px;
 }

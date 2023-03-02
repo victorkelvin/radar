@@ -1,6 +1,6 @@
 {
   "name": "radar",
-  "version": "1.0.0",
+  "version": "1.0.8",
   "description": "Michael Higino monitor tool",
   "main": "main.js",
   "author": "Victor Kelvin",
@@ -14,10 +14,25 @@
   "dependencies": {
     "@adiwajshing/baileys": "https://github.com/adiwajshing/Baileys",
     "axios": "^1.3.3",
+    "axios-retry": "^3.4.0",
     "qrcode": "^1.5.1"
   },
   "devDependencies": {
     "electron": "^23.0.0",
     "electron-builder": "^23.6.0"
+  },
+  "build": {
+    "appId": "RadarApp",
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "uninstallDisplayName": "uninstall-RadarApp"
+    },
+    "directories": {
+      "output": "dist"
+    }
   }
 }

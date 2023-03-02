@@ -11,16 +11,17 @@ ipcRenderer.on('clearDashboard', () => {
 
 async function newDivHtml(data) {
     let statusTxt;
-    if (data.status) statusTxt = "ATIVO";
+    if (data.status == 2) statusTxt = "ATENÇÃO";
+    if (data.status == 1) statusTxt = "ATIVO";
     if (!data.status) statusTxt = "FALHA";
     let htmlNewElement = `
     <div class="dashboard-div">
         <span class="dashboard-info" name="dashboard-name">
             ${data.name} 
         </span>
-        <span class="dashboard-info" name="dashboard-url">
+        <p name="dashboard-url"> 
             ${data.url}
-        </span>
+        </p>
         <span class="dashboard-info status${data.status}" id="dashboard-status">
             ${statusTxt}
         </span>
@@ -45,7 +46,7 @@ ipcRenderer.on('createDashboard', async (ev, arg) => {
 });
 
 document.getElementById('confirm-button').addEventListener('click', () => {
-    ipcRenderer.send('startMonitor', campaigns);
+    ipcRenderer.send('startMonitor');
 });
 
 document.getElementById('return-button').addEventListener('click', () => {

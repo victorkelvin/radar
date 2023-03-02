@@ -1,12 +1,14 @@
-const { app, BrowserWindow, dialog, ipcMain, Menu } = require("electron");
+const { app, BrowserWindow, ipcMain, Menu } = require("electron");
 const makeWASocket = require('@adiwajshing/baileys').default;
 const { boomify } = require("@hapi/boom");
 const { DisconnectReason, fetchLatestBaileysVersion, useMultiFileAuthState } = require("@adiwajshing/baileys");
 const fs = require("fs");
-const { syncDelay } = require("./src/Utils");
 const P = require("pino");
-const https = require('https');
 const axios = require('axios');
+const axiosRetry = require('axios-retry');
+const { checkLogin, checkSession, preload } = require("./src/Login");
+const {syncDelay} = require('./src/Utils');
+
 
 let sock;
 let mainWindow;
@@ -14,18 +16,27 @@ let authPage = "./auth.html";
 let indexPage = "./index.html";
 let browserIndex = authPage;
 let dataPath = `${app.getPath('userData')}\\storage`;
-let campaignForm;
-let interval;
+let onTop = 0;
+let login;
+let campaignForm, interval, intervalMnts, campaigns, contacts;
 
 const nativeMenus = [{
   label: 'Ferramentas',
   submenu: [{
-    label: 'Desconectar WhatsApp',
-    click() { waLogout() }
+    label: 'Always on top',
+    type: 'checkbox',
+    click: () => {
+      onTop ? onTop = 0 : onTop = 1;
+      mainWindow.setAlwaysOnTop(onTop);
+    },
   },
   {
     label: 'Apagar Cache',
     click() { clearCache() }
+  },
+  {
+    label: 'Desconectar WhatsApp',
+    click() { waLogout() }
   }
   ]
 }, {
@@ -41,28 +52,56 @@ const nativeMenus = [{
   ]
 }];
 
-const menu = Menu.buildFromTemplate(nativeMenus);
+let menu = Menu.buildFromTemplate(nativeMenus);
 
 
 app.whenReady().then(async () => {
+
+  let prealoadResponse = await preload(dataPath);
+  browserIndex = prealoadResponse.browserIndex;
+  login = prealoadResponse.login;
+
+
+
+
   mainWindow = createBrowserWindow(browserIndex);
 
-  main();
+  if (login) main();
 
   ipcMain.on('startMonitor', async (ev, response) => {
+    if (interval) clearInterval(interval);
+    if (response) {
+      intervalMnts = response.interval * 60000;
+      campaigns = response.campaigns;
+      contacts = response.contacts;
+    }
 
-    if(interval)clearInterval(interval);
-
-    console.log("startmonitor IPC:", response);
-    campaignForm = await getGroupCode(response);
+    console.log("startmonitor IPC:\n Campanhas: ", campaigns, "\n Interval: ", intervalMnts, "\n Contatos: ", contacts);
+    campaignForm = await getGroupCode(campaigns);
     await startMonitor(campaignForm);
-    interval = setInterval(async () => await startMonitor(campaignForm),300000 )
-    
+    interval = setInterval(async () => await startMonitor(campaignForm), intervalMnts)
+
   })
-  
-  ipcMain.on('returnPage', () =>{
-    mainWindow.loadFile('./index.html')
-  })
+
+  // ipcMain.on('startMonitor', async (ev, response) => {
+  //   checkGroup(response);
+  // })
+
+  ipcMain.on('returnPage', () => {
+    mainWindow.loadFile('./index.html');
+    if (interval) clearInterval(interval);
+
+  });
+
+  ipcMain.on('checkValidation', async (ev, response) => {
+    let { login } = await checkLogin(response, dataPath);
+    if (login) {
+      mainWindow.loadFile(authPage)
+      main();
+    } else {
+      mainWindow.webContents.send('validation-error');
+    }
+  });
 
 });
 
@@ -98,17 +137,16 @@ async function main() {
     if (qr) {
       console.log('NEW QR GENERATED', qr)
       mainWindow.webContents.send("newQR", qr);
-      mainWindow.webContents.openDevTools();
+      // mainWindow.webContents.openDevTools();
 
     }
     if (connection == 'open') {
       mainWindow.loadFile(indexPage);
-      mainWindow.webContents.openDevTools();
+      //mainWindow.webContents.openDevTools();
     }
   });
   sock.ev.on("creds.update", fileAuth.saveCreds);
 }
-
 
 
 const startSock = async (state) => {
@@ -140,14 +178,14 @@ const createBrowserWindow = (browserIndex) => {
   const browserOptions = {
     minWidth: 500,
     minHeight: 500,
-    // maxWidth: 800,
+    maxWidth: 800,
     useContentSize: true,
     height: 700,
     width: 500,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
-      devTools: true
+      // devTools: true
     },
   };
   const browser = new BrowserWindow(browserOptions);
@@ -165,33 +203,99 @@ process.on('uncaughtException', (e, origin) => {
 async function getGroupCode(args) {
   const remove = 'https://chat.whatsapp.com/';
   for (i = 0; i < args.length; i++) {
-    try {
-      const resp = await axios.get(args[i].url);
-      var groupCode = resp.request.res.responseUrl;
+    let retries = 3;
+    if (args[i].url.startsWith(remove)) {
+      args[i].groupCode = args[i].url.replaceAll(remove, '');
+    } else {
+      let groupCode="";
+      while(!groupCode.startsWith(remove) && retries!=0){
+        const resp = await axios.get(args[i].url);
+        groupCode = resp.request.res.responseUrl;
+        retries--;
+        syncDelay(5);
+      }
       groupCode = groupCode.replaceAll(remove, '');
       args[i].groupCode = groupCode;
-    } catch (error) {
-      console.log(error);
     }
   }
-  args[1].groupCode = "Iuy7sI3XNXwBuJ9xAb7weA";
   return args;
 };
 
+
 async function startMonitor(campaignForm) {
   console.log('starting Monitor!');
-  console.log(campaignForm); 
   mainWindow.webContents.send('clearDashboard');
   mainWindow.loadFile('./dashboard.html');
   for (i = 0; i < campaignForm.length; i++) {
     let status;
     try {
-      await sock.groupGetInviteInfo(campaignForm[i].groupCode);
-      status = 1;
+      let groupInfo = await sock.groupGetInviteInfo(campaignForm[i].groupCode);
+      if (groupInfo.size > 1800) {
+        status = 2;
+        await sendAlertMessage(campaignForm[i], status);
+      } else {
+        status = 1;
+      }
     } catch (error) {
+      mainWindow.show();
       status = 0;
+      await sendAlertMessage(campaignForm[i], status);
     }
-    mainWindow.webContents.send('createDashboard', {...campaignForm[i], status} );
+    mainWindow.webContents.send('createDashboard', { ...campaignForm[i], status });
   }
 };
 
+
+async function sendAlertMessage(campaign, status) {
+  let textMessageError = `🔴 *ATENÇÃO* 🔴
+  Problema encontrado no link da campanha:
+  *${campaign.name}*
+
+  Link: ${campaign.url}
+  
+  _Alerta gerado pelo *RADAR APP*_`;
+
+  let textMessageAlert = `⚠️ *ALERTA* ⚠️
+  Campanha com mais de 1800 participantes:
+  *${campaign.name}*
+
+  Link: ${campaign.url}
+  
+  _Alerta gerado pelo *RADAR APP*_`;
+
+  if (!status) textMessage = textMessageError;
+  if (status == 2) textMessage = textMessageAlert;
+
+
+  let wid = await getWAjid(contacts);
+  console.log('CONTATOS: ', wid);
+
+  for (let x in wid) {
+    await sock.sendMessage(wid[x], { text: textMessage })
+  }
+
+}
+
+
+async function getWAjid(contactList) {
+  let contacts = contactList.replace(/\s/g, '');
+  contacts = contacts.split(',');
+  let contactsJID = [];
+  let empty = contacts.indexOf('');
+  while (empty >= 0) {
+    contacts.splice(empty, 1);
+    empty = contacts.indexOf('');
+  };
+  for (var i = 0; i < contacts.length; i++) {
+    var [response] = await sock.onWhatsApp("55" + contacts[i]);
+    if (response != undefined && response?.exists) {
+      contactsJID.push(response.jid);
+    }
+  }
+  return contactsJID;
+}
+
+
+
+//https://joinzap.app/coc07
+//https://joinzap.app/atv16

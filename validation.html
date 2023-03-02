@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css?family=Roboto&display=swap" rel="stylesheet" />
+    <link href="assets/css/main.css" rel="stylesheet" />
+    <link rel="stylesheet" href="assets/css/variables.css">
+
+    <title>Radar App</title>
+</head>
+
+<body>
+    <div class="principal-container-validation">
+        
+        <div class="header">
+            <h1 class="title"><strong>Radar </strong>App</h1>
+        </div>
+        <main class="js-content-validation">
+
+            <!-- <div class="radar-validation"> -->
+
+                <h1>Informe seu email:</h1>
+
+                
+                <input class="radar-input validation-input" id="email-input" ></input><br>
+
+                <h1>Informe seu token:</h1>
+                <input class="radar-input validation-input" id="token-input" ></input><br>
+                
+                <span id="validation-error"></span>
+                <button class="radar-button" id="send-validation">Validar</button>
+            <!-- </div> -->
+
+
+
+        </main>
+    </div>
+</body>
+<script>
+    require('./src/renderer/validation')
+</script>
+
+</html>
