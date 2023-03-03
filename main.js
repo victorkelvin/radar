@@ -230,7 +230,7 @@ async function startMonitor(campaignForm) {
     let status;
     try {
       let groupInfo = await sock.groupGetInviteInfo(campaignForm[i].groupCode);
-      if (groupInfo.size > 1800) {
+      if (groupInfo.size > 1500) {
         status = 2;
         await sendAlertMessage(campaignForm[i], status);
       } else {

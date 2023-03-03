@@ -21,7 +21,7 @@ async function preload(dataPath) {
 }
 
 async function checkLogin(loginData, dataPath) {
-  let { data } = await api.post('checkLogin', { email: loginData.email });
+  let { data } = await api.post('radarLogin', { email: loginData.email });
   fs.mkdirSync(dataPath, {recursive: true,  });
   let login = false;
   let browserIndex;
@@ -36,17 +36,6 @@ async function checkLogin(loginData, dataPath) {
   return { browserIndex, login };
 }
 
-async function checkSession() {
-  let { data } = await api.post('checkPresence', { "email": localData.email });
-
-  if (!data.active || Date.now() > data.plan_limit) { //|| data.ip_login != data.ip_presence
-    return false;
-  } else {
-    return true
-  }
-}
-
-
 
 function readValidationFile(dataPath) {
   const _fbsa = `${dataPath}\\fbsa.json`;
@@ -60,4 +49,4 @@ function readValidationFile(dataPath) {
 }
 
 
-module.exports = { checkSession, checkLogin, preload };
+module.exports = { checkLogin, preload };
