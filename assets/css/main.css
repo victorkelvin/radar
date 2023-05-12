@@ -235,3 +235,7 @@ input {
 .validation-input{
     width: 400px;
 }
+
+.hidden{
+    visibility: hidden;
+}

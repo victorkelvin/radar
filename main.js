@@ -4,11 +4,8 @@ const { boomify } = require("@hapi/boom");
 const { DisconnectReason, fetchLatestBaileysVersion, useMultiFileAuthState } = require("@adiwajshing/baileys");
 const fs = require("fs");
 const P = require("pino");
-const axios = require('axios');
-const axiosRetry = require('axios-retry');
-const { checkLogin, checkSession, preload } = require("./src/Login");
-const {syncDelay} = require('./src/Utils');
-
+const { checkLogin, preload } = require("./src/Login");
+const got = require('got');
 
 let sock;
 let mainWindow;
@@ -18,7 +15,9 @@ let browserIndex = authPage;
 let dataPath = `${app.getPath('userData')}\\storage`;
 let onTop = 0;
 let login;
-let campaignForm, interval, intervalMnts, campaigns, contacts;
+var campaignForm;
+let interval, intervalMnts, campaigns, contacts;
+const waURL = 'https://chat.whatsapp.com/';
 
 const nativeMenus = [{
   label: 'Ferramentas',
@@ -61,31 +60,27 @@ app.whenReady().then(async () => {
   browserIndex = prealoadResponse.browserIndex;
   login = prealoadResponse.login;
 
-
-
-
   mainWindow = createBrowserWindow(browserIndex);
 
   if (login) main();
 
   ipcMain.on('startMonitor', async (ev, response) => {
+    mainWindow.loadFile('./dashboard.html');
+    mainWindow.webContents.send('clearDashboard');
     if (interval) clearInterval(interval);
     if (response) {
       intervalMnts = response.interval * 60000;
       campaigns = response.campaigns;
       contacts = response.contacts;
-    }
+    };
 
-    console.log("startmonitor IPC:\n Campanhas: ", campaigns, "\n Interval: ", intervalMnts, "\n Contatos: ", contacts);
+    console.log("startmonitor IPC:\nCampanhas: ", campaigns, "\nInterval: ", intervalMnts, "\nContatos: ", contacts);
+
     campaignForm = await getGroupCode(campaigns);
     await startMonitor(campaignForm);
-    interval = setInterval(async () => await startMonitor(campaignForm), intervalMnts)
+    interval = setInterval(async () => await startMonitor(campaignForm), intervalMnts);
 
-  })
-
-  // ipcMain.on('startMonitor', async (ev, response) => {
-  //   checkGroup(response);
-  // })
+  });
 
   ipcMain.on('returnPage', () => {
     mainWindow.loadFile('./index.html');
@@ -142,7 +137,7 @@ async function main() {
     }
     if (connection == 'open') {
       mainWindow.loadFile(indexPage);
-      //mainWindow.webContents.openDevTools();
+      // mainWindow.webContents.openDevTools();
     }
   });
   sock.ev.on("creds.update", fileAuth.saveCreds);
@@ -195,58 +190,86 @@ const createBrowserWindow = (browserIndex) => {
 };
 
 process.on('uncaughtException', (e, origin) => {
-  fs.writeFileSync(`${dataPath}\\radar.log`, e.stack, { flag: 'w+' });
+  fs.writeFileSync(`${dataPath}\\radar.log`, e.stack, { flag: 'a' });
   // throw e;
 });
 
 
+
 async function getGroupCode(args) {
-  const remove = 'https://chat.whatsapp.com/';
+
   for (i = 0; i < args.length; i++) {
-    let retries = 3;
-    if (args[i].url.startsWith(remove)) {
-      args[i].groupCode = args[i].url.replaceAll(remove, '');
-    } else {
-      let groupCode="";
-      while(!groupCode.startsWith(remove) && retries!=0){
-        const resp = await axios.get(args[i].url);
-        groupCode = resp.request.res.responseUrl;
-        retries--;
-        syncDelay(5);
-      }
-      groupCode = groupCode.replaceAll(remove, '');
-      args[i].groupCode = groupCode;
-    }
+    args[i].url.startsWith(waURL) ? args[i].groupCode = args[i].url.replaceAll(waURL, '') : args[i].groupCode = await getWALink(args[i].url).then(link => { return link.replaceAll(waURL, '') })
   }
   return args;
 };
 
 
+async function getWALink(url) {
+  var gCode = "";
+  let retries = 3;
+  while (!gCode.startsWith(waURL) && retries != 0) {
+    if (url.startsWith('https://go-whats.com/')) {
+      let redirect = url.replaceAll('https://go-whats.com/', 'https://go-whats.com/redirect/');
+      let resp = await got(redirect, { timeout: { request: 5000 } });
+      let jsonResp = JSON.parse(resp.body);
+      gCode = jsonResp.link
+    } else {
+      try {
+        let resp = await got(url, { timeout: { request: 5000 } });
+        console.log("GOT RESPONDE: ", resp.redirectUrls.length);
+        resp.statusCode = 200 && resp.redirectUrls[0] ? gCode = resp.redirectUrls[0] : gCode = "null", retries = 1;
+      } catch (error) {
+        gCode = "null";
+        fs.appendFileSync(`${dataPath}\\radar.log`, JSON.stringify(error), { flag: 'a' });
+      };
+    }
+    retries--;
+  }
+  return gCode;
+}
+
+
+
 async function startMonitor(campaignForm) {
-  console.log('starting Monitor!');
-  mainWindow.webContents.send('clearDashboard');
-  mainWindow.loadFile('./dashboard.html');
+  console.log('starting Monitor!', campaignForm);
+
   for (i = 0; i < campaignForm.length; i++) {
-    let status;
+    Object.assign(campaignForm[i], { status: await checkGroupInvite(campaignForm[i].groupCode) });  //LEMBRAR SEMPRE DISSO!!!!
+    if (campaignForm[i].status != 1) {
+      await sendAlertMessage(campaignForm[i]);
+    }
+  }
+  mainWindow.webContents.send('createDashboard', campaignForm);
+}
+
+
+
+
+async function checkGroupInvite(groupLink) {
+  var verification;
+  for (var n = 0; n < 2; n++) {
     try {
-      let groupInfo = await sock.groupGetInviteInfo(campaignForm[i].groupCode);
+      let groupInfo = await sock.groupGetInviteInfo(groupLink);
       if (groupInfo.size > 1500) {
-        status = 2;
-        await sendAlertMessage(campaignForm[i], status);
+        verification = 2;
+        n++;
       } else {
-        status = 1;
+        verification = 1;
+        n++;
       }
     } catch (error) {
-      mainWindow.show();
-      status = 0;
-      await sendAlertMessage(campaignForm[i], status);
+      fs.appendFileSync(`${dataPath}\\radar.log`, JSON.stringify(error), { flag: 'a' });
+      verification = 0;
     }
-    mainWindow.webContents.send('createDashboard', { ...campaignForm[i], status });
   }
+
+  return verification;
 };
 
 
-async function sendAlertMessage(campaign, status) {
+
+async function sendAlertMessage(campaign) {
   let textMessageError = `🔴 *ATENÇÃO* 🔴
   Problema encontrado no link da campanha:
   *${campaign.name}*
@@ -256,15 +279,15 @@ async function sendAlertMessage(campaign, status) {
   _Alerta gerado pelo *RADAR APP*_`;
 
   let textMessageAlert = `⚠️ *ALERTA* ⚠️
-  Campanha com mais de 1800 participantes:
+  Campanha com mais de 1500 participantes:
   *${campaign.name}*
 
   Link: ${campaign.url}
   
   _Alerta gerado pelo *RADAR APP*_`;
 
-  if (!status) textMessage = textMessageError;
-  if (status == 2) textMessage = textMessageAlert;
+  if (!campaign.status) textMessage = textMessageError;
+  if (campaign.status == 2) textMessage = textMessageAlert;
 
 
   let wid = await getWAjid(contacts);

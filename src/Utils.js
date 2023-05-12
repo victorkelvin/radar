@@ -1,15 +1,4 @@
-function formatID (contactList){
-    let contacts = contactList.replace(/\s/g, '');
-    contacts = contacts.split(',');
-    let empty = contacts.indexOf('');
-    while (empty >= 0) {
-        contacts.splice(empty, 1);
-        empty = contacts.indexOf('');
-    };
-    return contacts;
-}
-
-function syncDelay(seconds){
+function syncDelay(seconds) {
     var milliseconds = seconds * 1000;
     var start = new Date().getTime();
     var end = 0;
@@ -19,4 +8,4 @@ function syncDelay(seconds){
 };
 
 
-module.exports = {formatID, syncDelay};
+module.exports = { syncDelay };

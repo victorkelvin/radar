@@ -3,10 +3,8 @@ const { ipcRenderer } = require('electron');
 //___________DASHBOARD________________//
 
 let dashboardForm = document.querySelector('.dashboard-form');
-let campaigns = [];
 ipcRenderer.on('clearDashboard', () => {
     dashboardForm.innerHTML = ""
-    campaigns = [];
 })
 
 async function newDivHtml(data) {
@@ -36,16 +34,20 @@ async function newDivHtml(data) {
 }
 
 
-ipcRenderer.on('createDashboard', async (ev, arg) => {
+ipcRenderer.on('createDashboard', async (ev, campaignForms) => {
     var dateTime = new Date();
     document.getElementById('last-verification').innerText = `Ultima verificação: ${dateTime.toLocaleString()}`;
-    console.log('----------IPC: ', arg)
+    console.log('----------IPC: ', campaignForms)
 
-    campaigns.push(arg);
-    await newDivHtml(arg);
+    for (i = 0; i < campaignForms.length; i++) {
+        await newDivHtml(campaignForms[i]);
+    }
+    document.getElementById('confirm-button').classList.remove('hidden');
 });
 
 document.getElementById('confirm-button').addEventListener('click', () => {
+    document.getElementById('confirm-button').classList.add('hidden');
+
     ipcRenderer.send('startMonitor');
 });
 

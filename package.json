@@ -1,20 +1,21 @@
 {
   "name": "radar",
-  "version": "1.0.8",
+  "version": "1.2.2",
   "description": "Michael Higino monitor tool",
   "main": "main.js",
   "author": "Victor Kelvin",
   "license": "MIT",
+  "type": "commonjs",
   "scripts": {
     "build": "tsc",
     "typestart": "npm run build && electron .",
     "build-installer": "electron-builder",
-    "start": "electron ."
+    "start": "electron --trace-warnings .",
+    "test": "node test.js"
   },
   "dependencies": {
-    "@adiwajshing/baileys": "https://github.com/adiwajshing/Baileys",
-    "axios": "^1.3.3",
-    "axios-retry": "^3.4.0",
+    "@adiwajshing/baileys": "github:WhiskeySockets/Baileys",
+    "got": "9.6.0",
     "qrcode": "^1.5.1"
   },
   "devDependencies": {
