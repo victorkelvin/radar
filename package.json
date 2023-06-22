@@ -1,6 +1,6 @@
 {
   "name": "radar",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "Michael Higino monitor tool",
   "main": "main.js",
   "author": "Victor Kelvin",
