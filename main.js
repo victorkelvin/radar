@@ -1,11 +1,12 @@
 const { app, BrowserWindow, ipcMain, Menu } = require("electron");
-const makeWASocket = require('@adiwajshing/baileys').default;
+const makeWASocket = require('@whiskeysockets/baileys').default;
 const { boomify } = require("@hapi/boom");
-const { DisconnectReason, fetchLatestBaileysVersion, useMultiFileAuthState } = require("@adiwajshing/baileys");
+const { DisconnectReason,  useMultiFileAuthState } = require("@whiskeysockets/baileys");
 const fs = require("fs");
 const P = require("pino");
 const { checkLogin, preload } = require("./src/Login");
-const got = require('got');
+const { syncDelay } = require("./src/Utils");
+const {getGroupCode} = require('./src/groupLink');
 
 let sock;
 let mainWindow;
@@ -17,7 +18,6 @@ let onTop = 0;
 let login;
 var campaignForm;
 let interval, intervalMnts, campaigns, contacts;
-const waURL = 'https://chat.whatsapp.com/';
 
 const nativeMenus = [{
   label: 'Ferramentas',
@@ -62,11 +62,13 @@ app.whenReady().then(async () => {
 
   mainWindow = createBrowserWindow(browserIndex);
 
-  if (login) main();
+  if (login){
+    syncDelay(5)
+    main();
+  } 
 
   ipcMain.on('startMonitor', async (ev, response) => {
     mainWindow.loadFile('./dashboard.html');
-    mainWindow.webContents.send('clearDashboard');
     if (interval) clearInterval(interval);
     if (response) {
       intervalMnts = response.interval * 60000;
@@ -148,10 +150,7 @@ const startSock = async (state) => {
   // let { saveState } = useSingleFileAuthState(`${dataPath}\\SESSION.json`, P({ level: "warn" }));
 
   // fetch latest version of WA Web
-  const { version, isLatest } = await fetchLatestBaileysVersion();
-  console.log(`using WA v${version.join(".")}, isLatest: ${isLatest}`);
   const sock = makeWASocket({
-    version,
     logger: P({ level: 'silent', stream: 'store' }),
     auth: state,
     msgRetryCounterMap: 2,
@@ -196,46 +195,20 @@ process.on('uncaughtException', (e, origin) => {
 
 
 
-async function getGroupCode(args) {
-
-  for (i = 0; i < args.length; i++) {
-    args[i].url.startsWith(waURL) ? args[i].groupCode = args[i].url.replaceAll(waURL, '') : args[i].groupCode = await getWALink(args[i].url).then(link => { return link.replaceAll(waURL, '') })
-  }
-  return args;
-};
 
 
-async function getWALink(url) {
-  var gCode = "";
-  let retries = 3;
-  while (!gCode.startsWith(waURL) && retries != 0) {
-    if (url.startsWith('https://go-whats.com/')) {
-      let redirect = url.replaceAll('https://go-whats.com/', 'https://go-whats.com/redirect/');
-      let resp = await got(redirect, { timeout: { request: 5000 } });
-      let jsonResp = JSON.parse(resp.body);
-      gCode = jsonResp.link
-    } else {
-      try {
-        let resp = await got(url, { timeout: { request: 5000 } });
-        console.log("GOT RESPONDE: ", resp.redirectUrls.length);
-        resp.statusCode = 200 && resp.redirectUrls[0] ? gCode = resp.redirectUrls[0] : gCode = "null", retries = 1;
-      } catch (error) {
-        gCode = "null";
-        fs.appendFileSync(`${dataPath}\\radar.log`, JSON.stringify(error), { flag: 'a' });
-      };
-    }
-    retries--;
-  }
-  return gCode;
-}
+
+
 
 
 
 async function startMonitor(campaignForm) {
+  mainWindow.webContents.send('clearDashboard');
+
   console.log('starting Monitor!', campaignForm);
 
   for (i = 0; i < campaignForm.length; i++) {
-    Object.assign(campaignForm[i], { status: await checkGroupInvite(campaignForm[i].groupCode) });  //LEMBRAR SEMPRE DISSO!!!!
+    Object.assign(campaignForm[i], { status: await checkGroupInvite(campaignForm[i].groupCode) });  //LEMBRAR SEMPRE DISSO, Object.assign!!!!
     if (campaignForm[i].status != 1) {
       await sendAlertMessage(campaignForm[i]);
     }
